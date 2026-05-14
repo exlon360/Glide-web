@@ -1,0 +1,64 @@
+name: Build Unsigned IPA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Create Xcode project
+        run: |
+          # Create app structure
+          mkdir -p Glide
+          cd Glide
+          
+          # Copy Swift files
+          cp ../AppDelegate.swift .
+          cp ../ViewController.swift .
+          cp ../Info.plist .
+          
+          # Create minimal Info.plist
+          cat > Info.plist << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>
+    <string>Glide</string>
+    <key>CFBundleDisplayName</key>
+    <string>Glide Browser</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.exlon360.Glide</string>
+    <key>CFBundleVersion</key>
+    <string>1.0</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>UIRequiredDeviceCapabilities</key>
+    <array>
+        <string>arm64</string>
+    </array>
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+    </dict>
+</dict>
+</plist>
+EOF
+          
+      - name: Build IPA
+        run: |
+          mkdir -p Payload/Glide.app
+          cp Glide/*.swift Payload/Glide.app/ 2>/dev/null || true
+          cp Glide/Info.plist Payload/Glide.app/
+          zip -r Glide.ipa Payload/
+          
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Glide.ipa
+          path: Glide.ipa
